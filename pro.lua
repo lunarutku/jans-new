@@ -9,7 +9,6 @@ Esp.Enabled = false
 Esp.Tracers = false
 Esp.Boxes = false
 
-Library.theme.cursor = false
 local Window = Library:CreateWindow("🧟🎃 Evade", Vector2.new(500, 300), Enum.KeyCode.RightShift)
 local Evade = Window:CreateTab("General")
 local AutoFarms = Window:CreateTab("Farms")
@@ -28,11 +27,11 @@ local World = Gamee:CreateSector("World", "left")
 getgenv().Settings = {
     moneyfarm = false,
     afkfarm = false,
-    NoCameraShake = false,
-    Downedplayeresp = false,
+    NoCameraShake = true,
+    Downedplayeresp = true,
     AutoRespawn = false,
     TicketFarm = false,
-    Speed = 1450,
+    Speed = 2030,
     Jump = 3,
     reviveTime = 3,
     DownedColor = Color3.fromRGB(255,0,0),
@@ -51,6 +50,7 @@ getgenv().Settings = {
 
     }
 }
+
 
 
 local WalkSpeed = EvadeSector:AddSlider("Speed", 1450, 1450, 12000, 100, function(Value)
@@ -254,3 +254,99 @@ function convertToHMS(Seconds)
 	return Format(Hours).."H "..Format(Minutes).."M "..Format(Seconds)..'S'
 end
 
+task.spawn(function()
+    while task.wait(1) do
+        --if Settings.TicketFarm then
+        --    Settings.stats.TicketFarm.duration += 1
+        --end
+        if Settings.moneyfarm then
+            Settings.stats.TokenFarm.duration += 1
+        end 
+    end
+end)
+
+--local gettickets = localplayer:GetAttribute('Tickets')
+local GetTokens = localplayer:GetAttribute('Tokens')
+
+localplayer:GetAttributeChangedSignal('Tickets'):Connect(function()
+    --local tickets = tostring(gettickets - localplayer:GetAttribute('Tickets'))
+    --local cleanvalue = string.split(tickets, "-")
+    Settings.stats.TicketFarm.earned = cleanvalue[2]
+end)
+
+localplayer:GetAttributeChangedSignal('Tokens'):Connect(function()
+    local tokens = tostring(GetTokens - localplayer:GetAttribute('Tokens'))
+    local cleanvalue = string.split(tokens, "-")
+    print(cleanvalue[2])
+    Settings.stats.TokenFarm.earned = cleanvalue[2]
+end)
+
+localplayer:GetAttributeChangedSignal('Tokens'):Connect(function()
+    local tokens = tostring(GetTokens - localplayer:GetAttribute('Tokens'))
+    local cleanvalue = string.split(tokens, "-")
+    print(cleanvalue[2])
+    Settings.stats.TokenFarm.earned = cleanvalue[2]
+end)
+
+task.spawn(function()
+    while task.wait() do
+        if Settings.TicketFarm then
+            TypeLabelC5:Set('Ticket Farm')
+            DurationLabelC5:Set('Duration:'..convertToHMS(Settings.stats.TicketFarm.duration))
+            EarnedLabelC5:Set('Earned:'.. formatNumber(Settings.stats.TicketFarm.earned))
+            --TicketsLabelC5:Set('Total Tickets: '..localplayer:GetAttribute('Tickets'))
+
+            if game.Players.LocalPlayer:GetAttribute('InMenu') ~= true and localplayer:GetAttribute('Dead') ~= true then
+                for i,v in pairs(game:GetService("Workspace").Game.Effects.Tickets:GetChildren()) do
+                    localplayer.Character.HumanoidRootPart.CFrame = CFrame.new(v:WaitForChild('HumanoidRootPart').Position)
+                end
+            else
+                task.wait(2)
+                game:GetService("ReplicatedStorage").Events.Respawn:FireServer()
+            end
+            if localplayer.Character and localplayer.Character:GetAttribute("Downed") then
+                game:GetService("ReplicatedStorage").Events.Respawn:FireServer()
+                task.wait(2)
+            end
+        end
+    end
+end)
+
+
+task.spawn(function()
+    while task.wait() do
+        if Settings.AutoRespawn then
+             if localplayer.Character and localplayer.Character:GetAttribute("Downed") then
+                game:GetService("ReplicatedStorage").Events.Respawn:FireServer()
+             end
+        end
+
+        if Settings.NoCameraShake then
+            localplayer.PlayerScripts.CameraShake.Value = CFrame.new(0,0,0) * CFrame.new(0,0,0)
+        end
+        if Settings.moneyfarm then
+            TypeLabelC5:Set('Money Farm')
+            DurationLabelC5:Set('Duration:'..convertToHMS(Settings.stats.TokenFarm.duration))
+            EarnedLabelC5:Set('Earned:'.. formatNumber(Settings.stats.TokenFarm.earned))
+            --TicketsLabelC5:Set('Total Tokens: '..formatNumber(localplayer:GetAttribute('Tokens')))
+            
+            if localplayer:GetAttribute("InMenu") and localplayer:GetAttribute("Dead") ~= true then
+                game:GetService("ReplicatedStorage").Events.Respawn:FireServer()
+            end
+            if localplayer.Character and localplayer.Character:GetAttribute("Downed") then
+                game:GetService("ReplicatedStorage").Events.Respawn:FireServer()
+                task.wait(3)
+            else
+                revive()
+                task.wait(1)
+            end
+
+        end
+        if Settings.moneyfarm == false and Settings.afkfarm and localplayer.Character:FindFirstChild('HumanoidRootPart') ~= nil then
+            localplayer.Character:FindFirstChild('HumanoidRootPart').CFrame = CFrame.new(6007, 7005, 8005)
+        end
+    end
+end)
+
+Esp.Enabled = true
+Esp.NPCs = true
